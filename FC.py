@@ -6,6 +6,8 @@
 
 """
     利用Numpy实现FC
+    PyTorch AUC: 0.93522, Time used:0.00264s
+    DeepNumpy AUC: 0.93522, Time used:0.001s
 """
 import time
 
@@ -52,5 +54,3 @@ if __name__ == "__main__":
     result = DeepNumpy.sigmoid(DeepNumpy.Linear(x[train_len:], weight_dict))[:, 1].reshape(-1, 1)
     auc = roc_auc_score(y[train_len:] == 1, result)
     print("DeepNumpy AUC: {}, Time used:{}s".format(round(auc, 5), round(time.perf_counter() - start, 5)))
-
-    pass
