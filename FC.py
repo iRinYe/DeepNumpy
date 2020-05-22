@@ -6,8 +6,8 @@
 
 """
     利用Numpy实现FC
-    PyTorch AUC: 0.93522, Time used:0.00264s
-    DeepNumpy AUC: 0.93522, Time used:0.001s
+    PyTorch AUC: 0.96844, Time used:0.0026s
+    DeepNumpy AUC: 0.96844, Time used:0.00101s
 """
 import time
 
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     model = train(model, dl, 30, "CEP")
 
     # PyTorch Test
-    start = time.perf_counter()
     dl = getDataLoader(x[train_len:], y[train_len:], 30, False)
+    start = time.perf_counter()
     result = test(model, dl)
     auc = roc_auc_score(y[train_len:] == 1, result)
     print()
@@ -51,6 +51,6 @@ if __name__ == "__main__":
     # Numpy Test
     start = time.perf_counter()
     weight_dict = getModelWeight(model)
-    result = DeepNumpy.sigmoid(DeepNumpy.Linear(x[train_len:], weight_dict))[:, 1].reshape(-1, 1)
+    result = DeepNumpy.Sigmoid(DeepNumpy.Linear(x[train_len:], weight_dict))[:, 1].reshape(-1, 1)
     auc = roc_auc_score(y[train_len:] == 1, result)
     print("DeepNumpy AUC: {}, Time used:{}s".format(round(auc, 5), round(time.perf_counter() - start, 5)))
