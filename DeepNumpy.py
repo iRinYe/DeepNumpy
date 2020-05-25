@@ -28,6 +28,17 @@ def Flatten(x):
 
 
 def Linear(x, weight, bias):
+    """
+    利用Numpy实现FC
+    PyTorch-GPU AUC: 0.96346, Time used:0.00318s
+    DeepNumpy-CPU AUC: 0.96346, Time used:0.00119s
+    speed1:speed2 = 2.664
+
+    :param x: 输入向量
+    :param weight: 权重矩阵
+    :param bias: 偏置向量
+    :return: 结果向量
+    """
     return np.dot(x, weight.T) + bias
 
 
