@@ -4,4 +4,5 @@
 Coded By iRinYe.CN
 
 **仅供实验, 切勿实用**
-For experiment only, DO NOT APPLY IT INTO ANY REAL PROJECT.
+
+For experiment only, **DO NOT APPLY IT INTO ANY REAL PROJECT**.
