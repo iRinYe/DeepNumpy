@@ -6,8 +6,9 @@
 
 """
     利用Numpy实现CNN
-    PyTorch AUC: 0.9485, Time used:0.0033s
-    DeepNumpy AUC: 0.9485, Time used:0.00943s
+    PyTorch-GPU AUC: 0.95182724, Time used:0.00299s
+    DeepNumpy-CPU AUC: 0.95182724, Time used:0.00157s
+    speed1:speed2 = 1.898
 """
 import time
 
@@ -46,10 +47,11 @@ if __name__ == "__main__":
     start = time.perf_counter()
     result = test(model, dl)
     auc = roc_auc_score(y[train_len:] == 1, result)
+    speed1 = time.perf_counter() - start
     print()
     print()
     print()
-    print("PyTorch AUC: {}, Time used:{}s".format(round(auc, 5), round(time.perf_counter() - start, 5)))
+    print("PyTorch AUC: {}, Time used:{}s".format(round(auc, 8), round(speed1, 5)))
 
     # Numpy Test
     start = time.perf_counter()
@@ -62,4 +64,7 @@ if __name__ == "__main__":
 
     result = temp[:, 1].reshape(-1, 1)
     auc = roc_auc_score(y[train_len:] == 1, result)
-    print("DeepNumpy AUC: {}, Time used:{}s".format(round(auc, 5), round(time.perf_counter() - start, 5)))
+    speed2 = time.perf_counter() - start
+    print("DeepNumpy AUC: {}, Time used:{}s".format(round(auc, 8), round(speed2, 5)))
+
+    print("speed1:speed2 = {}".format(round(speed1 / speed2, 3)))
