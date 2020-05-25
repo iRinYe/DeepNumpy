@@ -51,7 +51,7 @@ if __name__ == "__main__":
     print()
     print()
     print()
-    print("PyTorch AUC: {}, Time used:{}s".format(round(auc, 8), round(speed1, 5)))
+    print("PyTorch-GPU AUC: {}, Time used:{}s".format(round(auc, 8), round(speed1, 5)))
 
     # Numpy Test
     start = time.perf_counter()
@@ -65,6 +65,5 @@ if __name__ == "__main__":
     result = temp[:, 1].reshape(-1, 1)
     auc = roc_auc_score(y[train_len:] == 1, result)
     speed2 = time.perf_counter() - start
-    print("DeepNumpy AUC: {}, Time used:{}s".format(round(auc, 8), round(speed2, 5)))
-
+    print("DeepNumpy-CPU AUC: {}, Time used:{}s".format(round(auc, 8), round(speed2, 5)))
     print("speed1:speed2 = {}".format(round(speed1 / speed2, 3)))
