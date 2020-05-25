@@ -6,18 +6,17 @@
 
 """
     利用Numpy实现FC
-    # PyTorch-GPU AUC: 0.9402, Time used:0.00302s
-    # DeepNumpy-CPU AUC: 0.9402, Time used:0.00107s
-    # DeepNumpy-CPU比PyTorch-GPU快了1.811倍
+    # PyTorch-GPU AUC: 0.91694352, AUPR: 0.931882, Time used:0.00168s
+    # DeepNumpy-CPU AUC: 0.91694352, AUPR: 0.93227529, Time used:0.00039s
+    # DeepNumpy-CPU比PyTorch-GPU快了3.261倍
 """
 import time
 
 import torch
 from sklearn.datasets import load_breast_cancer
-from sklearn.metrics import roc_auc_score
 
 import DeepNumpy
-from lib import getDataLoader, train, test, getModelWeight
+from lib import getDataLoader, train, test, getModelWeight, score
 
 
 class Model(torch.nn.Module):
@@ -40,22 +39,15 @@ if __name__ == "__main__":
     model = train(model, dl, 30, "CEP")
 
     # PyTorch Test
-    dl = getDataLoader(x[train_len:], y[train_len:], 30, False)
     start = time.perf_counter()
-    result = test(model, dl)
-    auc = roc_auc_score(y[train_len:] == 1, result)
+    dl = getDataLoader(x[train_len:], y[train_len:], 30, False)
+    result1 = test(model, dl)
     speed1 = time.perf_counter() - start
-    print()
-    print()
-    print()
-    print("PyTorch-GPU AUC: {}, Time used:{}s".format(round(auc, 5), round(speed1, 5)))
 
     # Numpy Test
     start = time.perf_counter()
     weight_dict = getModelWeight(model)
-    result = DeepNumpy.Sigmoid(DeepNumpy.Linear(x[train_len:], weight_dict['FC.weight'], weight_dict['FC.bias']))[:, 1]
-    auc = roc_auc_score(y[train_len:] == 1, result)
+    result2 = DeepNumpy.Sigmoid(DeepNumpy.Linear(x[train_len:], weight_dict['FC.weight'], weight_dict['FC.bias']))[:, 1]
     speed2 = time.perf_counter() - start
-    print("DeepNumpy-CPU AUC: {}, Time used:{}s".format(round(auc, 5), round(speed2, 5)))
 
-    print("DeepNumpy-CPU比PyTorch-GPU快了{}倍".format(round((speed1 - speed2) / speed2, 3)))
+    score(y[train_len:], result1, result2, speed1, speed2)
