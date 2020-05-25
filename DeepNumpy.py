@@ -30,9 +30,9 @@ def Flatten(x):
 def Linear(x, weight, bias):
     """
     利用Numpy实现FC
-    PyTorch-GPU AUC: 0.96346, Time used:0.00318s
-    DeepNumpy-CPU AUC: 0.96346, Time used:0.00119s
-    speed1:speed2 = 2.664
+    # PyTorch-GPU AUC: 0.9402, Time used:0.00302s
+    # DeepNumpy-CPU AUC: 0.9402, Time used:0.00107s
+    # DeepNumpy-CPU比PyTorch-GPU快了1.811倍
 
     :param x: 输入向量
     :param weight: 权重矩阵
@@ -45,9 +45,9 @@ def Linear(x, weight, bias):
 def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     """
     利用Numpy实现CNN
-    PyTorch-GPU AUC: 0.95182724, Time used:0.00299s
-    DeepNumpy-CPU AUC: 0.95182724, Time used:0.00157s
-    speed1:speed2 = 1.898
+    # PyTorch-GPU AUC: 0.95016611, Time used:0.00304s
+    # DeepNumpy-CPU AUC: 0.95016611, Time used:0.00157s
+    # DeepNumpy-CPU比PyTorch-GPU快了0.938倍
 
     :param x: 输入矩阵[batch, channel, H, W]
     :param CNN_filter: 卷积滤片的权重

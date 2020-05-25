@@ -6,9 +6,9 @@
 
 """
     利用Numpy实现CNN
-    PyTorch-GPU AUC: 0.95182724, Time used:0.00299s
-    DeepNumpy-CPU AUC: 0.95182724, Time used:0.00157s
-    speed1:speed2 = 1.898
+    # PyTorch-GPU AUC: 0.95016611, Time used:0.00304s
+    # DeepNumpy-CPU AUC: 0.95016611, Time used:0.00157s
+    # DeepNumpy-CPU比PyTorch-GPU快了0.938倍
 """
 import time
 
@@ -66,4 +66,4 @@ if __name__ == "__main__":
     auc = roc_auc_score(y[train_len:] == 1, result)
     speed2 = time.perf_counter() - start
     print("DeepNumpy-CPU AUC: {}, Time used:{}s".format(round(auc, 8), round(speed2, 5)))
-    print("speed1:speed2 = {}".format(round(speed1 / speed2, 3)))
+    print("DeepNumpy-CPU比PyTorch-GPU快了{}倍".format(round((speed1 - speed2) / speed2, 3)))
