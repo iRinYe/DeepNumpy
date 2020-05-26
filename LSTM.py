@@ -6,9 +6,6 @@
 
 """
     利用Numpy实现LSTM
-    # PyTorch-GPU AUC: 0.97009967, AUPR: 0.98925309, Time used:0.00267s
-    # DeepNumpy-CPU AUC: 0.97009967, AUPR: 0.98925309, Time used:0.00178s
-    # DeepNumpy-CPU比PyTorch-GPU快了0.501倍
 """
 import time
 

@@ -61,9 +61,6 @@ def Flatten(x):
 def Linear(x, weight, bias):
     """
     利用Numpy实现FC
-    # PyTorch-GPU AUC: 0.91694352, AUPR: 0.931882, Time used:0.00168s
-    # DeepNumpy-CPU AUC: 0.91694352, AUPR: 0.93227529, Time used:0.00039s
-    # DeepNumpy-CPU比PyTorch-GPU快了3.261倍
 
     :param x: 输入向量
     :param weight: 权重矩阵
@@ -76,9 +73,6 @@ def Linear(x, weight, bias):
 def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     """
     利用Numpy实现CNN
-    # PyTorch-GPU AUC: 0.94352159, AUPR: 0.97740254, Time used:0.00205s
-    # DeepNumpy-CPU AUC: 0.94352159, AUPR: 0.97740254, Time used:0.00103s
-    # DeepNumpy-CPU比PyTorch-GPU快了0.989倍
 
     :param x: 输入矩阵[batch, channel, H, W]
     :param CNN_filter: 卷积滤片的权重
@@ -117,22 +111,26 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
 
 
 def LSTM(x, LSTM_weight_i, LSTM_weight_h, LSTM_bias_i, LSTM_bias_h):
+    """
+    利用Numpy实现LSTM
+
+    :param x: 输入
+    :param LSTM_weight_i: 输入状态的权重
+    :param LSTM_weight_h: 隐藏状态的权重
+    :param LSTM_bias_i: 输入状态的偏置
+    :param LSTM_bias_h: 隐藏状态的偏置
+    :return: 最后一个时刻的输出
+    """
     batch_size, T, input_size = x.shape
     hidden_size = int(LSTM_bias_i.size / 4)
 
-    Wii, Wif, Wig, Wio = LSTM_weight_i.reshape(4, hidden_size, input_size)
-    Whi, Whf, Whg, Who = LSTM_weight_h.reshape(4, hidden_size, hidden_size)
-    bii, bif, big, bio = LSTM_bias_i.reshape(4, hidden_size)
-    bhi, bhf, bhg, bho = LSTM_bias_h.reshape(4, hidden_size)
-
     h_t = np.zeros((batch_size, hidden_size))
-    c_t = np.zeros((batch_size, hidden_size))
+    c_t = h_t / 1
 
     for t in range(T):
-        i_t = Sigmoid(np.dot(x[:, t, :], Wii.T) + bii + np.dot(h_t, Whi.T) + bhi)
-        f_t = Sigmoid(np.dot(x[:, t, :], Wif.T) + bif + np.dot(h_t, Whf.T) + bhf)
-        g_t = Tanh(np.dot(x[:, t, :], Wig.T) + big + np.dot(h_t, Whg.T) + bhg)
-        o_t = Sigmoid(np.dot(x[:, t, :], Wio.T) + bio + np.dot(h_t, Who.T) + bho)
+        temp_t = np.dot(x[:, t, :], LSTM_weight_i.T) + LSTM_bias_i + np.dot(h_t, LSTM_weight_h.T) + LSTM_bias_h
+        temp_t = temp_t.reshape(batch_size, 4, -1)
+        i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, 2, :]) for i in range(4))
         c_t = f_t * c_t + i_t * g_t
         h_t = o_t * Tanh(c_t)
 

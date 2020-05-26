@@ -6,9 +6,6 @@
 
 """
     利用Numpy实现FC
-    # PyTorch-GPU AUC: 0.91694352, AUPR: 0.931882, Time used:0.00168s
-    # DeepNumpy-CPU AUC: 0.91694352, AUPR: 0.93227529, Time used:0.00039s
-    # DeepNumpy-CPU比PyTorch-GPU快了3.261倍
 """
 import time
 

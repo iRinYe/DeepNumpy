@@ -6,9 +6,6 @@
 
 """
     利用Numpy实现CNN
-    # PyTorch-GPU AUC: 0.94352159, AUPR: 0.97740254, Time used:0.00205s
-    # DeepNumpy-CPU AUC: 0.94352159, AUPR: 0.97740254, Time used:0.00103s
-    # DeepNumpy-CPU比PyTorch-GPU快了0.989倍
 """
 import time
 
