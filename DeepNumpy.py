@@ -12,6 +12,8 @@ import numpy as np
 
 
 def Sigmoid(x):
+    np.seterr(divide='ignore', invalid='ignore', over='ignore')
+    # todo RuntimeWarning: overflow encountered in exp 暂时没定位到问题, 先把溢出警告屏蔽了
     return 1 / (1 + np.exp(-x))
 
 
@@ -20,7 +22,22 @@ def ReLU(x):
 
 
 def Tanh(x):
-    return (np.exp(x) - np.exp(-x)) / (np.exp(x) + np.exp(-x))
+    np.seterr(divide='ignore', invalid='ignore', over='ignore')
+    a = np.exp(x) - np.exp(-x)
+    b = np.exp(x) + np.exp(-x)
+
+    b[np.isinf(b)] = np.inf
+    a[np.isinf(a)] = np.inf
+
+    temp = a / b
+
+    temp[np.isposinf(a)] = 1
+    temp[np.isneginf(a)] = -1
+
+    if np.sum(np.isnan(temp)) > 0:
+        print("Tanh中的元素出现空值")
+
+    return temp
 
 
 def Flatten(x):
@@ -30,9 +47,9 @@ def Flatten(x):
 def Linear(x, weight, bias):
     """
     利用Numpy实现FC
-    # PyTorch-GPU AUC: 0.9402, Time used:0.00302s
-    # DeepNumpy-CPU AUC: 0.9402, Time used:0.00107s
-    # DeepNumpy-CPU比PyTorch-GPU快了1.811倍
+    # PyTorch-GPU AUC: 0.91694352, AUPR: 0.931882, Time used:0.00168s
+    # DeepNumpy-CPU AUC: 0.91694352, AUPR: 0.93227529, Time used:0.00039s
+    # DeepNumpy-CPU比PyTorch-GPU快了3.261倍
 
     :param x: 输入向量
     :param weight: 权重矩阵
@@ -45,9 +62,9 @@ def Linear(x, weight, bias):
 def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     """
     利用Numpy实现CNN
-    # PyTorch-GPU AUC: 0.95016611, Time used:0.00304s
-    # DeepNumpy-CPU AUC: 0.95016611, Time used:0.00157s
-    # DeepNumpy-CPU比PyTorch-GPU快了0.938倍
+    # PyTorch-GPU AUC: 0.94352159, AUPR: 0.97740254, Time used:0.00205s
+    # DeepNumpy-CPU AUC: 0.94352159, AUPR: 0.97740254, Time used:0.00103s
+    # DeepNumpy-CPU比PyTorch-GPU快了0.989倍
 
     :param x: 输入矩阵[batch, channel, H, W]
     :param CNN_filter: 卷积滤片的权重
@@ -83,4 +100,3 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     b_result = np.concatenate((b_result, feature_map), axis=0) if b_result is not None else feature_map     # [batch, filter num, channel, Fh, Fw]
 
     return np.sum(b_result, axis=2)     # [batch, filter num, Fh, Fw] todo 不同channel之间是加法?
-
