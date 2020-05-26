@@ -16,7 +16,7 @@ import torch
 from sklearn.datasets import load_breast_cancer
 
 import DeepNumpy
-from lib import getDataLoader, train, test, getModelWeight, score
+from lib import getDataLoader, train, test, score
 
 
 class Model(torch.nn.Module):
@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     # Numpy Test
     start = time.perf_counter()
-    weight_dict = getModelWeight(model)
+    weight_dict = DeepNumpy.getModelWeight(model)
 
     temp = DeepNumpy.Conv2d(x[train_len:].reshape(-1, 5, 6), weight_dict['CNN.weight'], weight_dict['CNN.bias'])
     temp = DeepNumpy.Flatten(temp)

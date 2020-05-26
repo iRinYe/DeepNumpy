@@ -11,6 +11,20 @@
 import numpy as np
 
 
+def getModelWeight(model):
+    """
+    将模型的参数转化成数组dict, key名为网络中每层的名字
+    :param model: PyTorch模型文件
+    :return: weight_dict 转换好的权重dict
+    """
+    weight_dict = dict(model.state_dict())
+
+    for key in dict(weight_dict):
+        weight_dict[key] = weight_dict[key].cpu().numpy()
+
+    return weight_dict
+
+
 def Sigmoid(x):
     np.seterr(divide='ignore', invalid='ignore', over='ignore')
     # todo RuntimeWarning: overflow encountered in exp 暂时没定位到问题, 先把溢出警告屏蔽了

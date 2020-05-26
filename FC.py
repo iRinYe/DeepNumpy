@@ -16,7 +16,7 @@ import torch
 from sklearn.datasets import load_breast_cancer
 
 import DeepNumpy
-from lib import getDataLoader, train, test, getModelWeight, score
+from lib import getDataLoader, train, test, score
 
 
 class Model(torch.nn.Module):
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     # Numpy Test
     start = time.perf_counter()
-    weight_dict = getModelWeight(model)
+    weight_dict = DeepNumpy.getModelWeight(model)
     result2 = DeepNumpy.Sigmoid(DeepNumpy.Linear(x[train_len:], weight_dict['FC.weight'], weight_dict['FC.bias']))[:, 1]
     speed2 = time.perf_counter() - start
 
