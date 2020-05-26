@@ -13,7 +13,7 @@
 import time
 
 import torch
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_digits
 
 import DeepNumpy
 from lib import getDataLoader, train, test, score
@@ -23,8 +23,8 @@ class Model(torch.nn.Module):
     # 模型定义
     def __init__(self):
         super(Model, self).__init__()
-        self.LSTM = torch.nn.LSTM(input_size=6, hidden_size=10, num_layers=1, batch_first=True)
-        self.FC = torch.nn.Linear(in_features=10, out_features=2)
+        self.LSTM = torch.nn.LSTM(input_size=8, hidden_size=16, num_layers=1, batch_first=True)
+        self.FC = torch.nn.Linear(in_features=16, out_features=10)
 
     def forward(self, x):
         temp = self.LSTM(x)[0][:, -1, :]
@@ -33,16 +33,17 @@ class Model(torch.nn.Module):
 
 if __name__ == "__main__":
     # 主函数入口
-    x, y = load_breast_cancer(True)
-    train_len = int(len(x) / 10 * 9)
-    dl = getDataLoader(x[:train_len].reshape(-1, 5, 6), y[:train_len], 30, True)
+    x, y = load_digits(return_X_y=True)
+    train_len = int(len(x) / 10 * 7)
+    test_len = len(x) - train_len
+    dl = getDataLoader(x[:train_len].reshape(-1, 8, 8), y[:train_len], 30, True)
     model = Model()
 
-    model = train(model=model, dataloader=dl, EPOCH=30, loss="CEP")
+    model = train(model=model, dataloader=dl, EPOCH=10, loss="CEP")
 
     # PyTorch Test
     start = time.perf_counter()
-    dl = getDataLoader(x[train_len:].reshape(-1, 5, 6), y[train_len:], 100, False)
+    dl = getDataLoader(x[train_len:].reshape(-1, 8, 8), y[train_len:], test_len, False)
 
     result1 = test(model, dl)
     speed1 = time.perf_counter() - start
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     # Numpy Test
     start = time.perf_counter()
     weight_dict = DeepNumpy.getModelWeight(model)
-    temp = DeepNumpy.LSTM(x[train_len:].reshape(-1, 5, 6),
+    temp = DeepNumpy.LSTM(x[train_len:].reshape(-1, 8, 8),
                           weight_dict['LSTM.weight_ih_l0'],
                           weight_dict['LSTM.weight_hh_l0'],
                           weight_dict['LSTM.bias_ih_l0'],

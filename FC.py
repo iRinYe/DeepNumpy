@@ -13,7 +13,7 @@
 import time
 
 import torch
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_digits
 
 import DeepNumpy
 from lib import getDataLoader, train, test, score
@@ -23,7 +23,7 @@ class Model(torch.nn.Module):
     # 模型定义
     def __init__(self):
         super(Model, self).__init__()
-        self.FC = torch.nn.Linear(in_features=30, out_features=2)
+        self.FC = torch.nn.Linear(in_features=64, out_features=10)
 
     def forward(self, x):
         return torch.sigmoid(self.FC(x))
@@ -31,16 +31,17 @@ class Model(torch.nn.Module):
 
 if __name__ == "__main__":
     # 主函数入口
-    x, y = load_breast_cancer(True)
-    train_len = int(len(x) / 10 * 9)
+    x, y = load_digits(return_X_y=True)
+    train_len = int(len(x) / 10 * 7)
+    test_len = len(x) - train_len
     dl = getDataLoader(x[:train_len], y[:train_len], 30, True)
     model = Model()
 
-    model = train(model, dl, 30, "CEP")
+    model = train(model=model, dataloader=dl, EPOCH=10, loss="CEP")
 
     # PyTorch Test
     start = time.perf_counter()
-    dl = getDataLoader(x[train_len:], y[train_len:], 30, False)
+    dl = getDataLoader(x[train_len:], y[train_len:], test_len, False)
     result1 = test(model, dl)
     speed1 = time.perf_counter() - start
 

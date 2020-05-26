@@ -1,7 +1,7 @@
 # @Time    : 2020/5/22 11:36
 # @Author  : iRinYe
 # @Email   : YeYilinCN@outlook.com
-# @File    : FC
+# @File    : CNN
 # @Software: PyCharm
 
 """
@@ -13,7 +13,7 @@
 import time
 
 import torch
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_digits
 
 import DeepNumpy
 from lib import getDataLoader, train, test, score
@@ -24,26 +24,29 @@ class Model(torch.nn.Module):
     def __init__(self):
         super(Model, self).__init__()
         self.CNN = torch.nn.Conv2d(in_channels=1, out_channels=5, kernel_size=3)
-        self.FC = torch.nn.Linear(in_features=5 * 3 * 4, out_features=2)
+        self.FC = torch.nn.Linear(in_features=5 * 6 * 6, out_features=10)
 
     def forward(self, x):
         temp = self.CNN(x)
-        temp = self.FC(temp.view(-1, 5 * 3 * 4))
+        temp = self.FC(temp.view(-1, 5 * 6 * 6))
         return torch.sigmoid(temp)
 
 
 if __name__ == "__main__":
     # 主函数入口
-    x, y = load_breast_cancer(True)
-    train_len = int(len(x) / 10 * 9)
-    dl = getDataLoader(x[:train_len].reshape(-1, 1, 5, 6), y[:train_len], 30, True)
+    x, y = load_digits(return_X_y=True)
+
+    train_len = int(len(x) / 10 * 7)
+    test_len = len(x) - train_len
+
+    dl = getDataLoader(x[:train_len].reshape(-1, 1, 8, 8), y[:train_len], 30, True)
     model = Model()
 
-    model = train(model=model, dataloader=dl, EPOCH=30, loss="CEP")
+    model = train(model=model, dataloader=dl, EPOCH=10, loss="CEP")
 
     # PyTorch Test
     start = time.perf_counter()
-    dl = getDataLoader(x[train_len:].reshape(-1, 1, 5, 6), y[train_len:], 30, False)
+    dl = getDataLoader(x[train_len:].reshape(-1, 1, 8, 8), y[train_len:], test_len, False)
     result1 = test(model, dl)
     speed1 = time.perf_counter() - start
 
@@ -51,7 +54,7 @@ if __name__ == "__main__":
     start = time.perf_counter()
     weight_dict = DeepNumpy.getModelWeight(model)
 
-    temp = DeepNumpy.Conv2d(x[train_len:].reshape(-1, 5, 6), weight_dict['CNN.weight'], weight_dict['CNN.bias'])
+    temp = DeepNumpy.Conv2d(x[train_len:].reshape(-1, 8, 8), weight_dict['CNN.weight'], weight_dict['CNN.bias'])
     temp = DeepNumpy.Flatten(temp)
     temp = DeepNumpy.Linear(temp, weight_dict['FC.weight'], weight_dict['FC.bias'])
     temp = DeepNumpy.Sigmoid(temp)
