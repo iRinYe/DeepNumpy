@@ -100,3 +100,26 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     b_result = np.concatenate((b_result, feature_map), axis=0) if b_result is not None else feature_map     # [batch, filter num, channel, Fh, Fw]
 
     return np.sum(b_result, axis=2)     # [batch, filter num, Fh, Fw] todo 不同channel之间是加法?
+
+
+def LSTM(x, LSTM_weight_i, LSTM_weight_h, LSTM_bias_i, LSTM_bias_h):
+    batch_size, T, input_size = x.shape
+    hidden_size = int(LSTM_bias_i.size / 4)
+
+    Wii, Wif, Wig, Wio = LSTM_weight_i.reshape(4, hidden_size, input_size)
+    Whi, Whf, Whg, Who = LSTM_weight_h.reshape(4, hidden_size, hidden_size)
+    bii, bif, big, bio = LSTM_bias_i.reshape(4, hidden_size)
+    bhi, bhf, bhg, bho = LSTM_bias_h.reshape(4, hidden_size)
+
+    h_t = np.zeros((batch_size, hidden_size))
+    c_t = np.zeros((batch_size, hidden_size))
+
+    for t in range(T):
+        i_t = Sigmoid(np.dot(x[:, t, :], Wii.T) + bii + np.dot(h_t, Whi.T) + bhi)
+        f_t = Sigmoid(np.dot(x[:, t, :], Wif.T) + bif + np.dot(h_t, Whf.T) + bhf)
+        g_t = Tanh(np.dot(x[:, t, :], Wig.T) + big + np.dot(h_t, Whg.T) + bhg)
+        o_t = Sigmoid(np.dot(x[:, t, :], Wio.T) + bio + np.dot(h_t, Who.T) + bho)
+        c_t = f_t * c_t + i_t * g_t
+        h_t = o_t * Tanh(c_t)
+
+    return h_t
