@@ -19,7 +19,7 @@ def getModelWeight(model):
     """
     weight_dict = dict(model.state_dict())
 
-    for key in dict(weight_dict):
+    for key in weight_dict:
         weight_dict[key] = weight_dict[key].cpu().numpy()
 
     return weight_dict
