@@ -81,33 +81,35 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     :param padding: 填充, 默认为(1, 1)
     :return: 卷积后的结果数组[batch, filter, channel, H, W]
     """
-    channel, filter_num, kernel_h, kernel_w = CNN_filter.shape
-    batch_size, input_h, input_w = x.shape
+    filter_num, filter_channel, kernel_h, kernel_w = CNN_filter.shape
+    batch_size, input_channel, input_h, input_w = x.shape
+
+    assert filter_channel == input_channel, "filter的channel应与input的channel相同！"
+
     padding_h, padding_w = padding
 
-    x = np.pad(x, ((0, 0), (padding_h, padding_h), (padding_w, padding_w)), 'constant', constant_values=0)
+    x = np.pad(x, ((0, 0), (0, 0), (padding_h, padding_h), (padding_w, padding_w)), 'constant', constant_values=0)
     Fh = int((input_h - kernel_h + 2 * padding_h) / stride[0] + 1)
     Fw = int((input_w - kernel_w + 2 * padding_w) / stride[1] + 1)
 
-    x = x.reshape(batch_size, 1, channel, input_h + 2 * padding_h, input_w + 2 * padding_w)
-    b_result = None
+    x = x.reshape(batch_size, 1, input_channel, input_h + 2 * padding_h, input_w + 2 * padding_w)
 
     feature_map = None
     for i in range(Fh):  # row start index
         row_temp = None
+        row_i = i * stride[0]
         for j in range(Fw):  # col start index
-
-            current_field = x[:, :, :, i: i + kernel_h, j: j + kernel_w]              # [batch, 1, channel, kernel_size[0], kernel_size[1]]
-            temp = np.multiply(current_field, CNN_filter)                             # [batch, 1, channel, kernel_size[0], kernel_size[1]]
-            temp = np.sum(temp, axis=(-2, -1))                                        # [batch, filter num, channel]
-            temp = temp + CNN_bias.reshape(1, filter_num, channel)                    # [batch, filter num, channel]
-            temp = temp.reshape(batch_size, filter_num, channel, 1, 1)
+            col_i = j * stride[1]
+            current_field = x[:, :, :, row_i: row_i + kernel_h, col_i: col_i + kernel_w]              # [batch, 1, i_channel, kernel_size[0], kernel_size[1]]
+            temp = np.multiply(current_field, CNN_filter)                             # [batch, filter num, i_channel, kernel_size[0], kernel_size[1]]
+            temp = np.sum(temp, axis=(2, 3, 4))                                        # [batch, filter num]
+            temp = temp + CNN_bias.reshape(1, filter_num)                    # [batch, filter num]
+            temp = temp.reshape(batch_size, filter_num, 1, 1)
 
             row_temp = np.concatenate((row_temp, temp), axis=-1) if row_temp is not None else temp
         feature_map = np.concatenate((feature_map, row_temp), axis=-2) if feature_map is not None else row_temp
-    b_result = np.concatenate((b_result, feature_map), axis=0) if b_result is not None else feature_map     # [batch, filter num, channel, Fh, Fw]
 
-    return np.sum(b_result, axis=2)     # [batch, filter num, Fh, Fw] todo 不同channel之间是加法?
+    return feature_map     # [batch, filter num, Fh, Fw]
 
 
 def LSTM(x, weight_i, weight_h, bias_i, bias_h):
