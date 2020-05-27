@@ -81,43 +81,36 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     :param padding: 填充, 默认为(1, 1)
     :return: 卷积后的结果数组[batch, filter, channel, H, W]
     """
+    padding_h, padding_w = padding
+    x = np.pad(x, ((0, 0), (0, 0), (padding_h, padding_h), (padding_w, padding_w)), 'constant', constant_values=0)
     filter_num, filter_channel, kernel_h, kernel_w = CNN_filter.shape
     batch_size, input_channel, input_h, input_w = x.shape
 
     assert filter_channel == input_channel, "filter的channel应与input的channel相同！"
 
-    padding_h, padding_w = padding
+    Fh = int((input_h - kernel_h) / stride[0] + 1)
+    Fw = int((input_w - kernel_w) / stride[1] + 1)
 
-    x = np.pad(x, ((0, 0), (0, 0), (padding_h, padding_h), (padding_w, padding_w)), 'constant', constant_values=0)
-    Fh = int((input_h - kernel_h + 2 * padding_h) / stride[0] + 1)
-    Fw = int((input_w - kernel_w + 2 * padding_w) / stride[1] + 1)
-
-    x = x.reshape(batch_size, 1, input_channel, input_h + 2 * padding_h, input_w + 2 * padding_w)
+    x = x.reshape(batch_size, 1, input_channel, input_h, input_w)
     filter_matrix = None
 
-    CNN_filter = CNN_filter.reshape(input_channel, filter_num, 1, kernel_h, kernel_w)
+    CNN_filter = CNN_filter.reshape(filter_num, 1, input_channel, kernel_h, kernel_w)
     for i in range(Fh):  # row start index
         row_i = i * stride[0]
         for j in range(Fw):  # col start index
             col_i = j * stride[1]
-            current_field = x[:, :, :, row_i: row_i + kernel_h, col_i: col_i + kernel_w]              # [batch, 1, i_channel, kernel_size[0], kernel_size[1]]
-            temp = np.multiply(current_field, CNN_filter)                             # [batch, filter num, i_channel, kernel_size[0], kernel_size[1]]
-            temp = np.sum(temp, axis=(2, 3, 4))                                        # [batch, filter num]
-            temp = temp + CNN_bias.reshape(1, filter_num)                    # [batch, filter num]
-            temp = temp.reshape(batch_size, filter_num, 1, 1)
-
-            temp_filter = np.pad(CNN_filter, ((0, 0), (0, 0), (0, 0), (i, Fh - i - 1), (j, Fw - j - 1)), mode='constant', constant_values=0)
+            temp_filter = np.pad(CNN_filter, ((0, 0), (0, 0), (0, 0), (row_i, input_h - kernel_h - row_i), (col_i, input_w - kernel_w - col_i)), mode='constant', constant_values=0)
 
             # todo 可能造成非常大的内存开销
-            filter_matrix = np.concatenate((filter_matrix, temp_filter), axis=2) if filter_matrix is not None else temp_filter
+            filter_matrix = np.concatenate((filter_matrix, temp_filter), axis=1) if filter_matrix is not None else temp_filter
 
-    filter_matrix = filter_matrix.reshape(channel, filter_num, Fh * Fw, input_h * input_w)
-    x = x.reshape(batch_size, channel, 1, 1, input_h * input_w)     # [batch, channel, filter num, Fh * Fw, Ih * Iw]
+    filter_matrix = filter_matrix.reshape(filter_num, Fh * Fw, input_channel, input_h * input_w)
+    x = x.reshape(batch_size, 1, 1, input_channel, input_h * input_w)
     feature_map = x * filter_matrix
-    feature_map = np.sum(feature_map, axis=-1) + CNN_bias.reshape(1, channel, filter_num, 1)
-    feature_map = feature_map.reshape(batch_size, channel, filter_num, Fh, Fw)
+    feature_map = np.sum(feature_map, axis=(3, 4)) + CNN_bias.reshape(1, filter_num, 1)
+    feature_map = feature_map.reshape(batch_size, filter_num, Fh, Fw)
 
-    return np.sum(feature_map, axis=1)     # [batch, filter num, Fh, Fw]
+    return feature_map
 
 
 def LSTM(x, weight_i, weight_h, bias_i, bias_h):

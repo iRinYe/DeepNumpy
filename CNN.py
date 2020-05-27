@@ -21,8 +21,8 @@ class Model(torch.nn.Module):
     # 模型定义
     def __init__(self):
         super(Model, self).__init__()
-        self.CNN = torch.nn.Conv2d(in_channels=3, out_channels=10, kernel_size=(4, 2), padding=(3, 1), stride=(2, 2))
-        self.FC = torch.nn.Linear(in_features=300, out_features=10)
+        self.CNN = torch.nn.Conv2d(in_channels=3, out_channels=5, kernel_size=(4, 1), padding=(2, 1), stride=(3, 2))
+        self.FC = torch.nn.Linear(in_features=75, out_features=10)
 
     def forward(self, x):
         batch_size = x.shape[0]
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     start = time.perf_counter()
     weight_dict = DeepNumpy.getModelWeight(model)
 
-    temp = DeepNumpy.Conv2d(x[train_len:].reshape(-1, 3, 8, 8), weight_dict['CNN.weight'], weight_dict['CNN.bias'], padding=(3, 1), stride=(2, 2))
+    temp = DeepNumpy.Conv2d(x[train_len:].reshape(-1, 3, 8, 8), weight_dict['CNN.weight'], weight_dict['CNN.bias'], padding=(2, 1), stride=(3, 2))
     temp = DeepNumpy.Flatten(temp)
     temp = DeepNumpy.Linear(temp, weight_dict['FC.weight'], weight_dict['FC.bias'])
     temp = DeepNumpy.Sigmoid(temp)
