@@ -81,7 +81,8 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     :param padding: 填充, 默认为(1, 1)
     :return: 卷积后的结果数组[batch, filter, channel, H, W]
     """
-    filter_num, channel, kernel_h, kernel_w = CNN_filter.shape
+    CNN_filter = np.swapaxes(CNN_filter, 0, 1)
+    channel, filter_num, kernel_h, kernel_w = CNN_filter.shape
     batch_size, input_h, input_w = x.shape
     padding_h, padding_w = padding
 
@@ -89,25 +90,24 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     Fh = int((input_h - kernel_h + 2 * padding_h) / stride[0] + 1)
     Fw = int((input_w - kernel_w + 2 * padding_w) / stride[1] + 1)
 
-    x = x.reshape(batch_size, 1, channel, input_h + 2 * padding_h, input_w + 2 * padding_w)
-    b_result = None
+    x = x.reshape(batch_size, channel, 1, input_h + 2 * padding_h, input_w + 2 * padding_w)
+    filter_matrix = None
 
-    feature_map = None
+    CNN_filter = CNN_filter.reshape(channel, filter_num, 1, kernel_h, kernel_w)
     for i in range(Fh):  # row start index
-        row_temp = None
         for j in range(Fw):  # col start index
 
-            current_field = x[:, :, :, i: i + kernel_h, j: j + kernel_w]              # [batch, 1, channel, kernel_size[0], kernel_size[1]]
-            temp = np.multiply(current_field, CNN_filter)                             # [batch, 1, channel, kernel_size[0], kernel_size[1]]
-            temp = np.sum(temp, axis=(-2, -1))                                        # [batch, filter num, channel]
-            temp = temp + CNN_bias.reshape(1, filter_num, channel)                    # [batch, filter num, channel]
-            temp = temp.reshape(batch_size, filter_num, channel, 1, 1)
+            temp_filter = np.pad(CNN_filter, ((0, 0), (0, 0), (0, 0), (i, Fh - i - 1), (j, Fw - j - 1)), mode='constant', constant_values=0)
 
-            row_temp = np.concatenate((row_temp, temp), axis=-1) if row_temp is not None else temp
-        feature_map = np.concatenate((feature_map, row_temp), axis=-2) if feature_map is not None else row_temp
-    b_result = np.concatenate((b_result, feature_map), axis=0) if b_result is not None else feature_map     # [batch, filter num, channel, Fh, Fw]
+            # todo 可能造成非常大的内存开销
+            filter_matrix = np.concatenate((filter_matrix, temp_filter), axis=2) if filter_matrix is not None else temp_filter
 
-    return np.sum(b_result, axis=2)     # [batch, filter num, Fh, Fw] todo 不同channel之间是加法?
+    filter_matrix = filter_matrix.reshape(channel, filter_num, Fh * Fw, input_h * input_w)
+    x = x.reshape(batch_size, channel, 1, 1, input_h * input_w)     # [batch, channel, filter num, Fh * Fw, Ih * Iw]
+    feature_map = x * filter_matrix
+    feature_map = np.sum(feature_map, axis=-1).reshape(batch_size, channel, filter_num, Fh, Fw)
+
+    return np.sum(feature_map, axis=1)     # [batch, filter num, Fh, Fw]
 
 
 def LSTM(x, LSTM_weight_i, LSTM_weight_h, LSTM_bias_i, LSTM_bias_h):
