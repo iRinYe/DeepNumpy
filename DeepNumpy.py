@@ -81,7 +81,7 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     :param padding: 填充, 默认为(1, 1)
     :return: 卷积后的结果数组[batch, filter, channel, H, W]
     """
-    filter_num, channel, kernel_h, kernel_w = CNN_filter.shape
+    channel, filter_num, kernel_h, kernel_w = CNN_filter.shape
     batch_size, input_h, input_w = x.shape
     padding_h, padding_w = padding
 
@@ -110,28 +110,60 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     return np.sum(b_result, axis=2)     # [batch, filter num, Fh, Fw] todo 不同channel之间是加法?
 
 
-def LSTM(x, LSTM_weight_i, LSTM_weight_h, LSTM_bias_i, LSTM_bias_h):
+def LSTM(x, weight_i, weight_h, bias_i, bias_h):
     """
     利用Numpy实现LSTM
 
     :param x: 输入
-    :param LSTM_weight_i: 输入状态的权重
-    :param LSTM_weight_h: 隐藏状态的权重
-    :param LSTM_bias_i: 输入状态的偏置
-    :param LSTM_bias_h: 隐藏状态的偏置
+    :param weight_i: 输入状态的权重
+    :param weight_h: 隐藏状态的权重
+    :param bias_i: 输入状态的偏置
+    :param bias_h: 隐藏状态的偏置
     :return: 最后一个时刻的输出
     """
     batch_size, T, input_size = x.shape
-    hidden_size = int(LSTM_bias_i.size / 4)
+    hidden_size = int(bias_i.size / 4)
 
     h_t = np.zeros((batch_size, hidden_size))
     c_t = h_t / 1
 
     for t in range(T):
-        temp_t = np.dot(x[:, t, :], LSTM_weight_i.T) + LSTM_bias_i + np.dot(h_t, LSTM_weight_h.T) + LSTM_bias_h
+        temp_t = np.dot(x[:, t, :], weight_i.T) + bias_i + np.dot(h_t, weight_h.T) + bias_h
         temp_t = temp_t.reshape(batch_size, 4, -1)
         i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, 2, :]) for i in range(4))
         c_t = f_t * c_t + i_t * g_t
         h_t = o_t * Tanh(c_t)
+
+    return h_t
+
+
+def GRU(x, weight_i, weight_h, bias_i, bias_h):
+    """
+    利用Numpy实现GRU
+
+    :param x: 输入
+    :param weight_i: 输入状态的权重
+    :param weight_h: 隐藏状态的权重
+    :param bias_i: 输入状态的偏置
+    :param bias_h: 隐藏状态的偏置
+    :return: 最后一个时刻的输出
+    """
+    batch_size, T, input_size = x.shape
+    hidden_size = int(bias_i.size / 3)
+
+    h_t = np.zeros((batch_size, hidden_size))
+    c_t = h_t / 1
+
+    for t in range(T):
+        temp_input = np.dot(x[:, t, :], weight_i.T) + bias_i
+        temp_hidden = np.dot(h_t, weight_h.T) + bias_h
+
+        temp_input = temp_input.reshape(batch_size, 3, -1)
+        temp_hidden = temp_hidden.reshape(batch_size, 3, -1)
+
+        r_t, z_t = (Sigmoid(temp_input[:, i, :] + temp_hidden[:, i, :]) for i in range(2))
+        n_t = Tanh(temp_input[:, 2, :] + r_t * temp_hidden[:, 2, :])
+
+        h_t = (1 - z_t) * n_t + z_t * h_t
 
     return h_t
