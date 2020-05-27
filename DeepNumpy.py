@@ -55,6 +55,13 @@ def Tanh(x):
 
 
 def Flatten(x):
+    """
+    展平, 从最后两个维度展平
+    :param x:
+    :return:
+    """
+    # x_shape = x.shape
+    # shape = (x_shape[dim] for dim in range(len(x_shape)))
     return x.reshape(x.shape[0], -1)
 
 
@@ -105,7 +112,8 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     filter_matrix = filter_matrix.reshape(channel, filter_num, Fh * Fw, input_h * input_w)
     x = x.reshape(batch_size, channel, 1, 1, input_h * input_w)     # [batch, channel, filter num, Fh * Fw, Ih * Iw]
     feature_map = x * filter_matrix
-    feature_map = np.sum(feature_map, axis=-1).reshape(batch_size, channel, filter_num, Fh, Fw)
+    feature_map = np.sum(feature_map, axis=-1) + CNN_bias.reshape(1, channel, filter_num, 1)
+    feature_map = feature_map.reshape(batch_size, channel, filter_num, Fh, Fw)
 
     return np.sum(feature_map, axis=1)     # [batch, filter num, Fh, Fw]
 
