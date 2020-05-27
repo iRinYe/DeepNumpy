@@ -49,10 +49,10 @@ if __name__ == "__main__":
     start = time.perf_counter()
     weight_dict = DeepNumpy.getModelWeight(model)
     temp = DeepNumpy.GRU(x[train_len:].reshape(-1, 8, 8),
-                          weight_dict['GRU.weight_ih_l0'],
-                          weight_dict['GRU.weight_hh_l0'],
-                          weight_dict['GRU.bias_ih_l0'],
-                          weight_dict['GRU.bias_hh_l0'])
+                         weight_dict['GRU.weight_ih_l0'],
+                         weight_dict['GRU.weight_hh_l0'],
+                         weight_dict['GRU.bias_ih_l0'],
+                         weight_dict['GRU.bias_hh_l0'])
 
     temp = DeepNumpy.Linear(temp, weight_dict['FC.weight'], weight_dict['FC.bias'])
     result2 = DeepNumpy.Sigmoid(temp)[:, 1]

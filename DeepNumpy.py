@@ -152,7 +152,6 @@ def GRU(x, weight_i, weight_h, bias_i, bias_h):
     hidden_size = int(bias_i.size / 3)
 
     h_t = np.zeros((batch_size, hidden_size))
-    c_t = h_t / 1
 
     for t in range(T):
         temp_input = np.dot(x[:, t, :], weight_i.T) + bias_i
