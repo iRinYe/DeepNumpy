@@ -7,7 +7,6 @@
 """
     DeepNumpy的网络
 """
-from typing import OrderedDict
 
 import numpy as np
 
@@ -18,9 +17,11 @@ def getModelWeight(model):
     :param model: PyTorch模型文件
     :return: weight_dict 转换好的权重dict
     """
-    if isinstance(model, OrderedDict):
+
+    try:
+        # 传了模型参数
         weight_dict = dict(model)
-    else:
+    except TypeError:
         try:
             weight_dict = dict(model.state_dict())
         except AttributeError:
@@ -123,6 +124,22 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
     return feature_map  # [batch, filter num, Fh, Fw]
 
 
+def LSTMcell(input, batch_size, hidden_size, Wi, Wh, bi, bh, T):
+
+    h_t = np.zeros((batch_size, hidden_size))
+    c_t = h_t / 1
+
+    for t in range(T):
+
+        temp_t = np.dot(input[:, t, :], Wi.T) + bi + np.dot(h_t, Wh.T) + bh
+        temp_t = temp_t.reshape(batch_size, 4, -1)
+        i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, i, :]) for i in range(4))
+        c_t = f_t * c_t + i_t * g_t
+        h_t = o_t * Tanh(c_t)
+
+    return h_t, c_t
+
+
 def LSTM(x, weight_i, weight_h, bias_i, bias_h, bidirectional=False):
     """
     利用Numpy实现LSTM
@@ -153,46 +170,22 @@ def LSTM(x, weight_i, weight_h, bias_i, bias_h, bidirectional=False):
     batch_size, T, input_size = x.shape
 
     for layer in range(layer_num):
-        h_t = np.zeros((batch_size, hidden_size))
-        c_t = h_t / 1
-
-        index = 2 * layer
         if bidirectional is True:
-            Wi = weight_i[index]
-            Wh = weight_h[index]
-            bi = bias_i[index]
-            bh = bias_h[index]
+            h_t = None
+            c_t = None
+            for ss in range(2):
+                index = 2 * layer + ss
+                temp_h, temp_c = LSTMcell(x, batch_size, hidden_size,
+                                          weight_i[index], weight_h[index], bias_i[index], bias_h[index], T)
+
+                h_t = np.concatenate((h_t, temp_h), axis=1) if h_t is not None else temp_h
+                c_t = np.concatenate((c_t, temp_c), axis=1) if c_t is not None else temp_c
+
         else:
-            Wi = weight_i
-            Wh = weight_h
-            bi = bias_i
-            bh = bias_h
+            h_t, c_t = LSTMcell(x, batch_size, hidden_size,
+                                weight_i, weight_h, bias_i, bias_h, T)
 
-        for t in range(T):
-            temp_t = np.dot(x[:, t, :], Wi.T) + bi + np.dot(h_t, Wh.T) + bh
-            temp_t = temp_t.reshape(batch_size, 4, -1)
-            i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, 2, :]) for i in range(4))
-            c_t = f_t * c_t + i_t * g_t
-            h_t = o_t * Tanh(c_t)
-
-        if bidirectional is True:
-            h_t_pie = np.zeros((batch_size, hidden_size))
-            c_t = h_t_pie / 1
-            index = 2 * layer + 1
-
-            Wi = weight_i[index]
-            Wh = weight_h[index]
-            bi = bias_i[index]
-            bh = bias_h[index]
-
-            for t in range(T - 1, -1, -1):
-                temp_t = np.dot(x[:, t, :], Wi.T) + bi + np.dot(h_t_pie, Wh.T) + bh
-                temp_t = temp_t.reshape(batch_size, 4, -1)
-                i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, 2, :]) for i in range(4))
-                c_t = f_t * c_t + i_t * g_t
-                h_t_pie = o_t * Tanh(c_t)
-
-    return np.concatenate((h_t, h_t_pie), axis=1) if bidirectional else h_t
+    return h_t
 
 
 def GRU(x, weight_i, weight_h, bias_i, bias_h):
