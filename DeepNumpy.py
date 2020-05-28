@@ -7,6 +7,7 @@
 """
     DeepNumpy的网络
 """
+from typing import OrderedDict
 
 import numpy as np
 
@@ -17,7 +18,15 @@ def getModelWeight(model):
     :param model: PyTorch模型文件
     :return: weight_dict 转换好的权重dict
     """
-    weight_dict = dict(model.state_dict())
+    if isinstance(model, OrderedDict):
+        weight_dict = dict(model)
+    else:
+        try:
+            weight_dict = dict(model.state_dict())
+        except AttributeError:
+            print("请检查模型参数，目前允许传入PyTorch的模型与模型参数OrderedDict")
+            print("传入的是:{}".format(type(model)))
+            exit()
 
     for key in weight_dict:
         weight_dict[key] = weight_dict[key].cpu().numpy()
@@ -100,19 +109,21 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
         row_i = i * stride[0]
         for j in range(Fw):  # col start index
             col_i = j * stride[1]
-            current_field = x[:, :, :, row_i: row_i + kernel_h, col_i: col_i + kernel_w]              # [batch, 1, i_channel, kernel_size[0], kernel_size[1]]
-            temp = np.multiply(current_field, CNN_filter)                             # [batch, filter num, i_channel, kernel_size[0], kernel_size[1]]
-            temp = np.sum(temp, axis=(2, 3, 4))                                        # [batch, filter num]
-            temp = temp + CNN_bias.reshape(1, filter_num)                    # [batch, filter num]
+            current_field = x[:, :, :, row_i: row_i + kernel_h,
+                            col_i: col_i + kernel_w]  # [batch, 1, i_channel, kernel_size[0], kernel_size[1]]
+            temp = np.multiply(current_field,
+                               CNN_filter)  # [batch, filter num, i_channel, kernel_size[0], kernel_size[1]]
+            temp = np.sum(temp, axis=(2, 3, 4))  # [batch, filter num]
+            temp = temp + CNN_bias.reshape(1, filter_num)  # [batch, filter num]
             temp = temp.reshape(batch_size, filter_num, 1, 1)
 
             row_temp = np.concatenate((row_temp, temp), axis=-1) if row_temp is not None else temp
         feature_map = np.concatenate((feature_map, row_temp), axis=-2) if feature_map is not None else row_temp
 
-    return feature_map     # [batch, filter num, Fh, Fw]
+    return feature_map  # [batch, filter num, Fh, Fw]
 
 
-def LSTM(x, weight_i, weight_h, bias_i, bias_h):
+def LSTM(x, weight_i, weight_h, bias_i, bias_h, bidirectional=False):
     """
     利用Numpy实现LSTM
 
@@ -121,22 +132,67 @@ def LSTM(x, weight_i, weight_h, bias_i, bias_h):
     :param weight_h: 隐藏状态的权重
     :param bias_i: 输入状态的偏置
     :param bias_h: 隐藏状态的偏置
+    :param bidirectional: 是否双向
     :return: 最后一个时刻的输出
     """
+
+    if isinstance(weight_i, tuple):
+        if bidirectional is False:
+            assert len(weight_i) == len(weight_h) == len(bias_i) == len(bias_h), "请确保LSTM参数的层数是一致的"
+            layer_num = int(len(weight_i))
+            hidden_size = int(bias_i[0].size / 4)
+            # todo stacked LSTM
+        else:
+            layer_num = int(len(weight_i) / 2)
+            assert len(weight_i) == len(weight_h) == len(bias_i) == len(bias_h) == layer_num * 2, "请确保正确传递双向LSTM的参数"
+            hidden_size = int(bias_i[0].size / 4 / layer_num)
+    else:
+        layer_num = 1
+        hidden_size = int(bias_i.size / 4)
+
     batch_size, T, input_size = x.shape
-    hidden_size = int(bias_i.size / 4)
 
-    h_t = np.zeros((batch_size, hidden_size))
-    c_t = h_t / 1
+    for layer in range(layer_num):
+        h_t = np.zeros((batch_size, hidden_size))
+        c_t = h_t / 1
 
-    for t in range(T):
-        temp_t = np.dot(x[:, t, :], weight_i.T) + bias_i + np.dot(h_t, weight_h.T) + bias_h
-        temp_t = temp_t.reshape(batch_size, 4, -1)
-        i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, 2, :]) for i in range(4))
-        c_t = f_t * c_t + i_t * g_t
-        h_t = o_t * Tanh(c_t)
+        index = 2 * layer
+        if bidirectional is True:
+            Wi = weight_i[index]
+            Wh = weight_h[index]
+            bi = bias_i[index]
+            bh = bias_h[index]
+        else:
+            Wi = weight_i
+            Wh = weight_h
+            bi = bias_i
+            bh = bias_h
 
-    return h_t
+        for t in range(T):
+            temp_t = np.dot(x[:, t, :], Wi.T) + bi + np.dot(h_t, Wh.T) + bh
+            temp_t = temp_t.reshape(batch_size, 4, -1)
+            i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, 2, :]) for i in range(4))
+            c_t = f_t * c_t + i_t * g_t
+            h_t = o_t * Tanh(c_t)
+
+        if bidirectional is True:
+            h_t_pie = np.zeros((batch_size, hidden_size))
+            c_t = h_t_pie / 1
+            index = 2 * layer + 1
+
+            Wi = weight_i[index]
+            Wh = weight_h[index]
+            bi = bias_i[index]
+            bh = bias_h[index]
+
+            for t in range(T - 1, -1, -1):
+                temp_t = np.dot(x[:, t, :], Wi.T) + bi + np.dot(h_t_pie, Wh.T) + bh
+                temp_t = temp_t.reshape(batch_size, 4, -1)
+                i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, 2, :]) for i in range(4))
+                c_t = f_t * c_t + i_t * g_t
+                h_t_pie = o_t * Tanh(c_t)
+
+    return np.concatenate((h_t, h_t_pie), axis=1) if bidirectional else h_t
 
 
 def GRU(x, weight_i, weight_h, bias_i, bias_h):
