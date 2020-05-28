@@ -18,7 +18,13 @@
 * 线性层 Linear
 * 二维卷积 Conv2d
 * 长短期记忆网络 LSTM
+    * todo stacked LSTM还未完成, 请勿尝试layers_num大于1的LSTM网络
+    * todo BiLSTM性能与PyTorch稍微有点不一致
 * 门控循环单元网络 GRU
+    * todo stacked GRU还未完成, 请勿尝试layers_num大于1的GRU网络
+    * todo BiGRU还未完成, 请勿尝试BiGRU网络
+    
+* todo GPU加速
 
 注: 示例代码中的模型结构不是为了预测, 只是为了对比PyTorch与DeepNumpy的效果.
 
