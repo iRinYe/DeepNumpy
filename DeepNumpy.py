@@ -68,7 +68,7 @@ def Flatten(x):
     return x.reshape(x.shape[0], -1)
 
 
-def Linear(x, weight, bias):
+def Linear(x, weight, bias=None):
     """
     利用Numpy实现FC
 
@@ -77,10 +77,14 @@ def Linear(x, weight, bias):
     :param bias: 偏置向量
     :return: 结果向量
     """
-    return np.dot(x, weight.T) + bias
+
+    if bias is not None:
+        return np.dot(x, weight.T) + bias
+    else:
+        return np.dot(x, weight.T)
 
 
-def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
+def Conv2d(x, CNN_filter, CNN_bias=None, stride=(1, 1), padding=(0, 0)):
     """
     利用Numpy实现CNN
 
@@ -115,7 +119,8 @@ def Conv2d(x, CNN_filter, CNN_bias, stride=(1, 1), padding=(0, 0)):
             temp = np.multiply(current_field,
                                CNN_filter)  # [batch, filter num, i_channel, kernel_size[0], kernel_size[1]]
             temp = np.sum(temp, axis=(2, 3, 4))  # [batch, filter num]
-            temp = temp + CNN_bias.reshape(1, filter_num)  # [batch, filter num]
+            if CNN_bias is not None:
+                temp = temp + CNN_bias.reshape(1, filter_num)  # [batch, filter num]
             temp = temp.reshape(batch_size, filter_num, 1, 1)
 
             row_temp = np.concatenate((row_temp, temp), axis=-1) if row_temp is not None else temp
@@ -131,7 +136,7 @@ def LSTMcell(input, batch_size, hidden_size, Wi, Wh, bi, bh, T):
 
     for t in range(T):
 
-        temp_t = np.dot(input[:, t, :], Wi.T) + bi + np.dot(h_t, Wh.T) + bh
+        temp_t = Linear(input[:, t, :], Wi, bi) + Linear(h_t, Wh, bh)
         temp_t = temp_t.reshape(batch_size, 4, -1)
         i_t, f_t, g_t, o_t = (Sigmoid(temp_t[:, i, :]) if i != 2 else Tanh(temp_t[:, i, :]) for i in range(4))
         c_t = f_t * c_t + i_t * g_t
@@ -205,8 +210,9 @@ def GRU(x, weight_i, weight_h, bias_i, bias_h):
     h_t = np.zeros((batch_size, hidden_size))
 
     for t in range(T):
-        temp_input = np.dot(x[:, t, :], weight_i.T) + bias_i
-        temp_hidden = np.dot(h_t, weight_h.T) + bias_h
+
+        temp_input = Linear(x[:, t, :], weight_i, bias_i)
+        temp_hidden = Linear(h_t, weight_h, bias_h)
 
         temp_input = temp_input.reshape(batch_size, 3, -1)
         temp_hidden = temp_hidden.reshape(batch_size, 3, -1)
