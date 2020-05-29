@@ -8,7 +8,8 @@
     DeepNumpy的网络
 """
 
-import numpy as np
+import cupy as np
+# import numpy
 
 
 def getModelWeight(model):
@@ -36,8 +37,6 @@ def getModelWeight(model):
 
 
 def Sigmoid(x):
-    np.seterr(divide='ignore', invalid='ignore', over='ignore')
-    # todo RuntimeWarning: overflow encountered in exp 暂时没定位到问题, 先把溢出警告屏蔽了
     return 1 / (1 + np.exp(-x))
 
 
@@ -46,7 +45,6 @@ def ReLU(x):
 
 
 def Tanh(x):
-    np.seterr(divide='ignore', invalid='ignore', over='ignore')
     a = np.exp(x) - np.exp(-x)
     b = np.exp(x) + np.exp(-x)
 
@@ -78,6 +76,8 @@ def Linear(x, weight, bias=None):
     :return: 结果向量
     """
 
+    x, weight, bias = GPU(x, weight, bias)
+
     if bias is not None:
         return np.dot(x, weight.T) + bias
     else:
@@ -102,7 +102,7 @@ def Conv2d(x, CNN_filter, CNN_bias=None, stride=(1, 1), padding=(0, 0)):
 
     padding_h, padding_w = padding
 
-    x = np.pad(x, ((0, 0), (0, 0), (padding_h, padding_h), (padding_w, padding_w)), 'constant', constant_values=0)
+    x = np.pad(x, ((0, 0), (0, 0), (padding_h, padding_h), (padding_w, padding_w)), 'constant', constant_values=np.asarray(0))
     Fh = int((input_h - kernel_h + 2 * padding_h) / stride[0] + 1)
     Fw = int((input_w - kernel_w + 2 * padding_w) / stride[1] + 1)
 
@@ -130,6 +130,7 @@ def Conv2d(x, CNN_filter, CNN_bias=None, stride=(1, 1), padding=(0, 0)):
 
 
 def LSTMcell(input, batch_size, hidden_size, Wi, Wh, bi, bh, T):
+    input, batch_size, hidden_size, Wi, Wh, bi, bh, T = GPU(input, batch_size, hidden_size, Wi, Wh, bi, bh, T)
 
     h_t = np.zeros((batch_size, hidden_size))
     c_t = h_t / 1
@@ -223,3 +224,11 @@ def GRU(x, weight_i, weight_h, bias_i, bias_h):
         h_t = (1 - z_t) * n_t + z_t * h_t
 
     return h_t
+
+
+def GPU(*args):
+    return (cp.asarray(arg) if type(arg) == "" else arg for arg in args)
+
+
+def CPU(x):
+    return cp.asnumpy(x)
