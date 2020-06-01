@@ -26,11 +26,9 @@
     
 ## 实验室
 ### DeepNumpy-GPU
-> cuda加速目前可能不稳定, 请斟酌使用
+> cuda加速目前可能不稳定, 请斟酌使用. 此外, 在小数据集上使用Cuda加速可能会由于数据频繁转移造成测试耗时增加.
 
-**DeepNumpy目前支持实验性的Cuda加速**
-
-如有此需求请切换至"cuda加速支持"分支
+**DeepNumpy目前支持实验性的Cuda加速**, 如有此需求请切换至"cuda加速支持"分支
 
 #### 目前支持网络结构
 
@@ -49,9 +47,9 @@
     ```
 
 
+---
 注: 示例代码中的模型结构不是为了预测, 只是为了对比PyTorch与DeepNumpy的效果.
 
----
 **仅供实验, 切勿实用**
 
 For experiment only, **DO NOT APPLY IT INTO ANY REAL PROJECT**.
