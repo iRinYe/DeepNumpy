@@ -8,8 +8,13 @@
     DeepNumpy的网络
 """
 
-import cupy as np
-# import numpy
+isCuda = True           # 是否使用GPU加速(小样本强烈不建议开启)
+if isCuda is True:
+    print("DeepNumpy工作在GPU环境下")
+    import cupy as np
+else:
+    print("DeepNumpy工作在CPU环境下")
+    import numpy as np
 
 
 def getModelWeight(model):
@@ -79,7 +84,7 @@ def Linear(x, weight, bias=None):
     x, weight, bias = GPU(x, weight, bias)
 
     if bias is not None:
-        return np.dot(x, weight.T) + bias
+        return np.add(np.dot(x, weight.T), bias)
     else:
         return np.dot(x, weight.T)
 
@@ -98,11 +103,13 @@ def Conv2d(x, CNN_filter, CNN_bias=None, stride=(1, 1), padding=(0, 0)):
     filter_num, filter_channel, kernel_h, kernel_w = CNN_filter.shape
     batch_size, input_channel, input_h, input_w = x.shape
 
+    x, CNN_filter, CNN_bias = GPU(x, CNN_filter, CNN_bias)
+
     assert filter_channel == input_channel, "filter的channel应与input的channel相同！"
 
     padding_h, padding_w = padding
 
-    x = np.pad(x, ((0, 0), (0, 0), (padding_h, padding_h), (padding_w, padding_w)), 'constant', constant_values=np.asarray(0))
+    x = np.pad(x, ((0, 0), (0, 0), (padding_h, padding_h), (padding_w, padding_w)), 'constant', constant_values=0)
     Fh = int((input_h - kernel_h + 2 * padding_h) / stride[0] + 1)
     Fw = int((input_w - kernel_w + 2 * padding_w) / stride[1] + 1)
 
@@ -120,7 +127,7 @@ def Conv2d(x, CNN_filter, CNN_bias=None, stride=(1, 1), padding=(0, 0)):
                                CNN_filter)  # [batch, filter num, i_channel, kernel_size[0], kernel_size[1]]
             temp = np.sum(temp, axis=(2, 3, 4))  # [batch, filter num]
             if CNN_bias is not None:
-                temp = temp + CNN_bias.reshape(1, filter_num)  # [batch, filter num]
+                temp = np.add(temp, CNN_bias.reshape(1, filter_num))  # [batch, filter num]
             temp = temp.reshape(batch_size, filter_num, 1, 1)
 
             row_temp = np.concatenate((row_temp, temp), axis=-1) if row_temp is not None else temp
@@ -227,8 +234,14 @@ def GRU(x, weight_i, weight_h, bias_i, bias_h):
 
 
 def GPU(*args):
-    return (cp.asarray(arg) if type(arg) == "" else arg for arg in args)
+    if isCuda:
+        return (np.asarray(arg) for arg in args)
+    else:
+        return args
 
 
 def CPU(x):
-    return cp.asnumpy(x)
+    if isCuda:
+        return np.asnumpy(x)
+    else:
+        return x

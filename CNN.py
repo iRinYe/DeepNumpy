@@ -16,6 +16,8 @@ from sklearn.datasets import load_digits
 import DeepNumpy
 from lib import getDataLoader, train, test, score
 
+isCuda = True
+
 
 class Model(torch.nn.Module):
     # 模型定义
@@ -44,12 +46,12 @@ if __name__ == "__main__":
     dl = getDataLoader(x[:train_len].reshape(-1, 3, 8, 8), y[:train_len], 30, True)
     model = Model()
 
-    model = train(model=model, dataloader=dl, EPOCH=10, loss="CEP")
+    model = train(model=model, dataloader=dl, EPOCH=10, loss="CEP", isCuda=isCuda)
 
     # PyTorch Test
     start = time.perf_counter()
     dl = getDataLoader(x[train_len:].reshape(-1, 3, 8, 8), y[train_len:], test_len, False)
-    result1 = test(model, dl)
+    result1 = test(model, dl, isCuda=isCuda)
     speed1 = time.perf_counter() - start
 
     # Numpy Test
@@ -62,6 +64,7 @@ if __name__ == "__main__":
     temp = DeepNumpy.Sigmoid(temp)
 
     result2 = temp[:, 1].reshape(-1, 1)
+    result2 = DeepNumpy.CPU(result2)
     speed2 = time.perf_counter() - start
 
     score(y[train_len:], result1, result2, speed1, speed2)
